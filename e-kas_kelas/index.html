@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Kas Kelas - Shiori System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background: #0056b3; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: none; }
+        .hidden { display: none !important; }
+        .nav-tabs .nav-link { color: #495057; font-weight: 500; border: none; }
+        .nav-tabs .nav-link.active { color: #0056b3; border-bottom: 3px solid #0056b3; background: none; }
+        .btn-success { background-color: #28a745; border: none; }
+        .btn-primary { background-color: #0056b3; border: none; }
+        .modal-content { border: none; border-radius: 15px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark shadow-sm mb-4">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">📘 E-Kas Kelas</span>
+        <button id="btnLogout" class="btn btn-outline-light btn-sm hidden" onclick="logout()">Keluar</button>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    <div id="loginSection" class="row justify-content-center mt-5">
+        <div class="col-md-4">
+            <div class="card p-4 text-center">
+                <h3 class="mb-4 fw-bold">Masuk Sistem</h3>
+                <div class="mb-3 text-start">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="userInput" class="form-control" placeholder="bendahara / mahasiswa">
+                </div>
+                <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" onclick="prosesLogin()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainDashboard" class="hidden">
+        <div class="welcome-section d-flex justify-content-between align-items-center mb-4">
+            <h2 id="welcomeText" class="h4 fw-bold text-dark">Dashboard</h2>
+            <div class="badge bg-primary p-2 px-3 shadow-sm" id="userRoleBadge">Role</div>
+        </div>
+
+        <div class="card bg-white p-4 mb-4 border-start border-primary border-5">
+            <p class="text-muted mb-1 small fw-bold">TOTAL SALDO KAS SAAT INI</p>
+            <h1 id="totalSaldoDisplay" class="fw-bold text-dark display-5">Rp 0</h1>
+        </div>
+
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabLaporan">Laporan Keuangan</button></li>
+            <li class="nav-item"><button class="nav-link" id="tabManageBtn" data-bs-toggle="tab" data-bs-target="#tabManage">Kelola Kas & Tagihan</button></li>
+            <li class="nav-item"><button class="nav-link hidden" id="tabMhsBtn" data-bs-toggle="tab" data-bs-target="#tabMhs">Status Tagihan Saya</button></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabLaporan">
+                <div class="card p-4">
+                    <h5 class="mb-3 fw-bold">Riwayat Transaksi</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Keterangan</th>
+                                    <th>Jenis</th>
+                                    <th class="text-end">Nominal</th>
+                                    <th class="text-center bendahara-only hidden">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabManage">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="card p-4 h-100">
+                            <h6 class="fw-bold text-primary">BUAT TAGIHAN BARU</h6>
+                            <hr>
+                            <input type="text" id="tagihanName" class="form-control mb-2" placeholder="Nama Tagihan">
+                            <input type="number" id="tagihanAmount" class="form-control mb-2" placeholder="Nominal">
+                            <button class="btn btn-primary btn-sm w-100 shadow-sm" onclick="buatTagihan()">Rilis Tagihan</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card p-4 h-100 border-start border-success border-4">
+                            <h6 class="fw-bold text-success">INPUT KAS MASUK</h6>
+                            <hr>
+                            <input type="text" id="mhsName" class="form-control mb-2" placeholder="Nama Mahasiswa">
+                            <input type="number" id="mhsAmount" class="form-control mb-2" placeholder="Nominal">
+                            <button class="btn btn-success btn-sm w-100 shadow-sm" onclick="simpanData('masuk')">Simpan Pemasukan</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card p-4 bg-dark text-white h-100">
+                            <h6 class="fw-bold">CATAT PENGELUARAN</h6>
+                            <hr>
+                            <input type="text" id="outDesc" class="form-control mb-2" placeholder="Keterangan">
+                            <input type="number" id="outAmount" class="form-control mb-2" placeholder="Nominal">
+                            <button class="btn btn-outline-light btn-sm w-100 shadow-sm" onclick="simpanData('keluar')">Simpan Pengeluaran</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-4">
+                    <h6 class="fw-bold">DAFTAR TAGIHAN AKTIF</h6>
+                    <div class="table-responsive mt-2">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nama Tagihan</th>
+                                    <th>Nominal</th>
+                                    <th class="text-center">Konfirmasi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tagihanMasterTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tabMhs">
+                <div class="card p-4">
+                    <h5 class="fw-bold mb-3">Status Tagihan Pribadi</h5>
+                    <div id="mhsStatusList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmPay" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-0 bg-success text-white">
+                <h6 class="modal-title fw-bold">Konfirmasi Pembayaran</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-4 text-center">
+                <p class="mb-3">Silakan masukkan nama mahasiswa yang membayar:</p>
+                <input type="text" id="payMhsName" class="form-control form-control-lg text-center" placeholder="Nama Mahasiswa">
+            </div>
+            <div class="modal-footer border-0">
+                <button class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                <button class="btn btn-success px-4" id="btnFinalPay">Konfirmasi Lunas</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDelete" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content shadow-lg">
+            <div class="modal-body py-4 text-center">
+                <div class="mb-3 text-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
+                      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                      <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                    </svg>
+                </div>
+                <h6 class="fw-bold">Hapus catatan ini?</h6>
+                <p class="small text-muted">Data yang dihapus tidak bisa dikembalikan.</p>
+                <div class="mt-3">
+                    <button class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-danger btn-sm px-3" id="btnConfirmDelete">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let logs = JSON.parse(localStorage.getItem('eKasLogs')) || [];
+    let masterTagihan = JSON.parse(localStorage.getItem('eKasMaster')) || [];
+    let currentUser = "";
+    let tempIdx = null;
+    let deleteIdx = null;
+
+    const modalPay = new bootstrap.Modal(document.getElementById('modalConfirmPay'));
+    const modalDel = new bootstrap.Modal(document.getElementById('modalDelete'));
+
+    function prosesLogin() {
+        const val = document.getElementById('userInput').value.toLowerCase().trim();
+        if (val === 'bendahara' || val === 'mahasiswa') {
+            currentUser = val;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('mainDashboard').classList.remove('hidden');
+            document.getElementById('btnLogout').classList.remove('hidden');
+            document.getElementById('userRoleBadge').innerText = val.toUpperCase();
+            
+            if (val === 'bendahara') {
+                document.querySelectorAll('.bendahara-only').forEach(e => e.classList.remove('hidden'));
+                document.getElementById('tabManageBtn').classList.remove('hidden');
+                document.getElementById('tabMhsBtn').classList.add('hidden');
+            } else {
+                document.getElementById('tabManageBtn').classList.add('hidden');
+                document.getElementById('tabMhsBtn').classList.remove('hidden');
+                renderMhsStatus();
+            }
+            renderData();
+        } else { alert("User tidak ditemukan!"); }
+    }
+
+    function buatTagihan() {
+        const name = document.getElementById('tagihanName').value;
+        const amt = parseInt(document.getElementById('tagihanAmount').value);
+        if(!name || isNaN(amt)) return alert("Data wajib diisi!");
+        masterTagihan.push({ nama: name, nominal: amt });
+        localStorage.setItem('eKasMaster', JSON.stringify(masterTagihan));
+        document.getElementById('tagihanName').value = "";
+        document.getElementById('tagihanAmount').value = "";
+        renderData();
+    }
+
+    function simpanData(tipe) {
+        let desc, amt;
+        if (tipe === 'masuk') {
+            const mhs = document.getElementById('mhsName').value;
+            amt = parseInt(document.getElementById('mhsAmount').value);
+            desc = "Bayar Kas: " + mhs;
+            if (!mhs || isNaN(amt)) return alert("Data wajib diisi!");
+        } else {
+            desc = "Pengeluaran: " + document.getElementById('outDesc').value;
+            amt = parseInt(document.getElementById('outAmount').value);
+            if (!document.getElementById('outDesc').value || isNaN(amt)) return alert("Data wajib diisi!");
+        }
+        logs.push({ tgl: new Date().toLocaleDateString('id-ID'), ket: desc, jenis: tipe, nominal: amt });
+        saveAndRender();
+        document.querySelectorAll('input').forEach(i => i.value = "");
+    }
+
+    function triggerKonfirmasi(index) { tempIdx = index; modalPay.show(); }
+
+    document.getElementById('btnFinalPay').onclick = function() {
+        const mhs = document.getElementById('payMhsName').value;
+        if(!mhs) return alert("Isi nama mahasiswa!");
+        const tagihan = masterTagihan[tempIdx];
+        logs.push({ 
+            tgl: new Date().toLocaleDateString('id-ID'), 
+            ket: `Lunas ${tagihan.nama} - ${mhs}`, 
+            jenis: 'masuk', 
+            nominal: tagihan.nominal 
+        });
+        masterTagihan.splice(tempIdx, 1);
+        localStorage.setItem('eKasMaster', JSON.stringify(masterTagihan));
+        saveAndRender();
+        modalPay.hide();
+        document.getElementById('payMhsName').value = "";
+    };
+
+    function triggerHapus(index) { deleteIdx = index; modalDel.show(); }
+
+    document.getElementById('btnConfirmDelete').onclick = function() {
+        logs.splice(deleteIdx, 1);
+        saveAndRender();
+        modalDel.hide();
+    };
+
+    function renderMhsStatus() {
+        const div = document.getElementById('mhsStatusList');
+        div.innerHTML = masterTagihan.length === 0 ? "<p class='text-muted'>Semua tagihan sudah lunas.</p>" : "";
+        masterTagihan.forEach(t => {
+            div.innerHTML += `<div class="alert alert-info py-2 shadow-sm"><b>${t.nama}</b> - Rp ${t.nominal.toLocaleString()}</div>`;
+        });
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('eKasLogs', JSON.stringify(logs));
+        renderData();
+    }
+
+    function renderData() {
+        const tTable = document.getElementById('tagihanMasterTable');
+        tTable.innerHTML = "";
+        masterTagihan.forEach((t, i) => {
+            tTable.innerHTML += `<tr>
+                <td class="fw-bold text-primary">${t.nama}</td>
+                <td>Rp ${t.nominal.toLocaleString()}</td>
+                <td class="text-center"><button class="btn btn-sm btn-success px-3 shadow-sm" onclick="triggerKonfirmasi(${i})">Lunas</button></td>
+            </tr>`;
+        });
+
+        const table = document.getElementById('logTable');
+        table.innerHTML = "";
+        let total = 0;
+        logs.forEach((item, index) => {
+            total += (item.jenis === 'masuk') ? item.nominal : -item.nominal;
+            let aksiHtml = (currentUser === 'bendahara') ? `<td class="text-center"><button class="btn btn-sm btn-outline-danger border-0" onclick="triggerHapus(${index})">×</button></td>` : "";
+            table.innerHTML += `<tr>
+                <td class="small text-muted">${item.tgl}</td>
+                <td class="fw-bold">${item.ket}</td>
+                <td><span class="badge ${item.jenis === 'masuk' ? 'bg-success' : 'bg-dark'}">${item.jenis.toUpperCase()}</span></td>
+                <td class="text-end fw-bold">Rp ${item.nominal.toLocaleString('id-ID')}</td>
+                ${aksiHtml}
+            </tr>`;
+        });
+        document.getElementById('totalSaldoDisplay').innerText = "Rp " + total.toLocaleString('id-ID');
+    }
+
+    function logout() { location.reload(); }
+</script>
+</body>
+</html>
